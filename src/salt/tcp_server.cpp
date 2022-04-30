@@ -86,6 +86,10 @@ bool tcp_server::start() {
   return true;
 }
 
+void tcp_server::run() {
+  accept_thread_.get_io_context().run();
+}
+
 void tcp_server::set_assemble_creator(
     std::function<base_packet_assemble *(void)> assemble_creator) {
   assemble_creator_ = assemble_creator;

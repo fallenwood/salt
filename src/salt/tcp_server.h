@@ -25,6 +25,8 @@ public:
 
   bool start();
 
+  void run();
+
   inline std::string get_listen_address() const {
     return listen_ip_.to_string();
   }

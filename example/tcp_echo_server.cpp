@@ -28,7 +28,7 @@ int main() {
   if (server.start()) {
     std::cout << "server start success, salt version:" << salt::version
               << std::endl;
-    std::cin.get();
+    server.run();
     return 0;
   } else {
     std::cerr << "server start error, salt version:" << salt::version
