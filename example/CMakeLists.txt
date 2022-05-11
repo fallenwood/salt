@@ -33,3 +33,21 @@ target_include_directories(
     "${PROJECT_BINARY_DIR}/src"
     "${PROJECT_SOURCE_DIR}/src"
 )
+
+add_executable(
+    co_tcp_echo_server
+    co_tcp_echo_server.cpp
+)
+
+target_link_libraries(
+    co_tcp_echo_server
+    salt
+)
+
+target_include_directories(
+    co_tcp_echo_server PUBLIC
+    "${asio_header}"
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+    "${PROJECT_BINARY_DIR}/src"
+    "${PROJECT_SOURCE_DIR}/src"
+)

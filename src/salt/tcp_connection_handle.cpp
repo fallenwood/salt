@@ -15,6 +15,16 @@ void tcp_connection_handle::send(
   connection_->send(seq, std::move(data), call_back);
 }
 
+asio::awaitable<void> tcp_connection_handle::co_send(
+    uint32_t seq, std::string data) {
+  // if (!connection_) {
+  //   call(call_back, seq, make_error_code(error_code::null_connection));
+  //   return;
+  // }
+
+  co_await connection_->co_send(seq, std::move(data));
+}
+
 tcp_connection_handle::tcp_connection_handle(
     std::shared_ptr<tcp_connection> connection)
     : connection_(std::move(connection)) {}

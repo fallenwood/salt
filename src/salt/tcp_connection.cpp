@@ -10,15 +10,16 @@
 
 namespace salt {
 
-std::shared_ptr<tcp_connection> tcp_connection::create(
+tcp_connection *tcp_connection::create(
     asio::io_context &transfer_io_context,
     base_packet_assemble *packet_assemble,
+    base_co_packet_assemble *co_packet_assemble,
     std::function<void(const std::string &remote_address, uint16_t remote_port,
                        const std::error_code &error_code)>
         read_notify_callback /* = nullptr */
 ) {
-  auto connection = std::shared_ptr<tcp_connection>(new tcp_connection(
-      transfer_io_context, packet_assemble, std::move(read_notify_callback)));
+  auto connection = new tcp_connection(transfer_io_context, packet_assemble,
+                                       co_packet_assemble, std::move(read_notify_callback));
   if (connection) {
     connection->init();
   }
@@ -135,6 +136,25 @@ void tcp_connection::notify_connection_error(const std::error_code &error_code) 
 
 void tcp_connection::handle_fail_connection(const std::error_code& error_code) {
   notify_connection_error(error_code);
+}
+
+asio::awaitable<bool> tcp_connection::co_read() {
+  while (true) {
+    auto data_length = co_await socket_.async_read_some(
+        asio::buffer(receive_buffer_), asio::use_awaitable);
+
+    std::string data{this->receive_buffer_.begin(),
+                     this->receive_buffer_.begin() + data_length};
+    auto read_result = co_await this->co_packet_assemble_->co_data_received(
+        tcp_connection_handle::create(shared_from_this()), std::move(data));
+  }
+
+  co_return true;
+}
+
+asio::awaitable<void> tcp_connection::co_send(uint32_t seq, std::string data) {
+  co_await asio::async_write(this->socket_, asio::buffer(data),
+                             asio::use_awaitable);
 }
 
 } // namespace salt

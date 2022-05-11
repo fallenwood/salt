@@ -23,7 +23,11 @@ public:
   void set_assemble_creator(
       std::function<base_packet_assemble *(void)> assemble_creator);
 
+  void set_co_assemble_creator(
+      std::function<base_co_packet_assemble *(void)> assemble_creator);
+
   bool start();
+  asio::awaitable<bool> co_start();
 
   inline std::string get_listen_address() const {
     return listen_ip_.to_string();
@@ -31,8 +35,13 @@ public:
 
   inline uint16_t get_listen_port() const { return listen_port_; }
 
+  inline asio::io_context& get_io_context() {
+    return accept_thread_.get_io_context();
+  }
+
 private:
   bool accept();
+  asio::awaitable<tcp_connection*> co_accept();
 
 private:
   uint16_t listen_port_{0};
@@ -44,5 +53,6 @@ private:
   asio_io_context_thread accept_thread_;
   std::vector<std::shared_ptr<shared_asio_io_context_thread>> io_threads_;
   std::function<base_packet_assemble *(void)> assemble_creator_{nullptr};
+  std::function<base_co_packet_assemble *(void)> co_assemble_creator_{nullptr};
 };
 } // namespace salt

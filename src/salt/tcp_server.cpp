@@ -48,7 +48,7 @@ bool tcp_server::accept() {
     return false;
   }
   auto connection =
-      tcp_connection::create(transfor_io_context_, assemble_creator_());
+      tcp_connection::create(transfor_io_context_, assemble_creator_(), nullptr);
   if (!connection) {
     log_error("create connection error");
     return false;
@@ -87,6 +87,34 @@ bool tcp_server::accept() {
   return true;
 }
 
+asio::awaitable<tcp_connection*> tcp_server::co_accept() {
+  auto connection =
+      tcp_connection::create(transfor_io_context_, nullptr, co_assemble_creator_());
+  if (!connection) {
+    log_error("create connection error");
+    co_return nullptr;
+  }
+
+  co_await acceptor_->async_accept(connection->get_socket(),
+                                   asio::use_awaitable);
+
+  std::error_code error_code;
+  const auto &local_endpoint =
+      connection->get_socket().local_endpoint(error_code);
+  if (!error_code) {
+    connection->set_local_address(local_endpoint.address().to_string());
+    connection->set_local_port(local_endpoint.port());
+  }
+  const auto &remote_endpoint =
+      connection->get_socket().remote_endpoint(error_code);
+  if (!error_code) {
+    connection->set_remote_address(remote_endpoint.address().to_string());
+    connection->set_remote_port(remote_endpoint.port());
+  }
+
+  co_return connection;
+}
+
 bool tcp_server::start() {
   if (!assemble_creator_) {
     log_error("assemble creator not set");
@@ -105,9 +133,38 @@ bool tcp_server::start() {
   return true;
 }
 
+asio::awaitable<bool> tcp_server::co_start() {
+  if (!co_assemble_creator_) {
+    log_error("assemble creator not set");
+    co_return false;
+  }
+
+  acceptor_ = std::make_shared<asio::ip::tcp::acceptor>(
+      accept_thread_.get_io_context(),
+      asio::ip::tcp::endpoint(listen_ip_, listen_port_));
+
+  while (true) {
+    auto connection = std::shared_ptr<tcp_connection>(co_await co_accept());
+
+    asio::co_spawn(
+        transfor_io_context_.get_executor(),
+        [connection] -> asio::awaitable<void> {
+          co_await connection->co_read();
+        },
+        asio::detached);
+  }
+  co_return true;
+}
+
 void tcp_server::set_assemble_creator(
     std::function<base_packet_assemble *(void)> assemble_creator) {
   assemble_creator_ = assemble_creator;
 }
+
+void tcp_server::set_co_assemble_creator(
+    std::function<base_co_packet_assemble *(void)> co_assemble_creator) {
+  co_assemble_creator_ = co_assemble_creator;
+}
+
 
 } // namespace salt

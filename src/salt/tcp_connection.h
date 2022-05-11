@@ -14,9 +14,10 @@ namespace salt {
 
 class tcp_connection : public std::enable_shared_from_this<tcp_connection> {
 public:
-  static std::shared_ptr<tcp_connection>
+  static tcp_connection*
   create(asio::io_context &transfer_io_context,
          base_packet_assemble *packet_assemble,
+         base_co_packet_assemble *co_packet_assemble,
          std::function<void(const std::string &remote_address,
                             uint16_t remote_port,
                             const std::error_code &error_code)>
@@ -29,6 +30,12 @@ public:
   void
   send(uint32_t seq, std::string data,
        std::function<void(uint32_t seq, const std::error_code &)> call_back);
+
+  asio::awaitable<bool>
+  co_read();
+
+  asio::awaitable<void>
+  co_send(uint32_t seq, std::string data);
 
   void disconnect();
 
@@ -66,15 +73,34 @@ public:
 private:
   tcp_connection(asio::io_context &transfer_io_context,
                  base_packet_assemble *packet_assemble,
+                 base_co_packet_assemble *co_packet_assemble,
                  std::function<void(const std::string &addr, uint16_t port,
                                     const std::error_code &error_code)>
                      connection_notify_callback)
       : transfer_io_context_(transfer_io_context), socket_(transfer_io_context),
         packet_assemble_(packet_assemble),
+        co_packet_assemble_{co_packet_assemble},
         strand_(asio::make_strand(transfer_io_context)),
         connection_notify_callback_(std::move(connection_notify_callback)) {
     log_debug("create tcp_conection:%p", this);
   }
+  
+  tcp_connection(asio::io_context &transfer_io_context,
+                 base_packet_assemble *packet_assemble,
+                 std::function<void(const std::string &addr, uint16_t port,
+                                    const std::error_code &error_code)>
+                     connection_notify_callback)
+      : tcp_connection(transfer_io_context, packet_assemble, nullptr, connection_notify_callback) {
+  }
+
+  
+  tcp_connection(asio::io_context &transfer_io_context,
+                 base_co_packet_assemble *co_packet_assemble,
+                 std::function<void(const std::string &addr, uint16_t port,
+                                    const std::error_code &error_code)>
+                     connection_notify_callback)                     
+      : tcp_connection(transfer_io_context, nullptr, co_packet_assemble, connection_notify_callback) {
+      }
 
   void init() { receive_buffer_.resize(receive_buffer_max_size_); }
 
@@ -95,6 +121,7 @@ private:
   uint32_t receive_buffer_max_size_{1024};
   std::string receive_buffer_;
   std::unique_ptr<base_packet_assemble> packet_assemble_{nullptr};
+  std::unique_ptr<base_co_packet_assemble> co_packet_assemble_{nullptr};
   asio::strand<asio::io_context::executor_type> strand_;
   std::atomic_flag write_flag_{false};
   std::string remote_address_;

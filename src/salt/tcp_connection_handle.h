@@ -12,6 +12,7 @@ public:
   void send(uint32_t seq, std::string data,
             std::function<void(uint32_t seq, const std::error_code &)>
                 call_back) override;
+  asio::awaitable<void> co_send(uint32_t seq, std::string data) override;
   ~tcp_connection_handle() override = default;
 
 private:

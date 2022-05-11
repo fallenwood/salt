@@ -40,6 +40,9 @@ public:
   void set_assemble_creator(
       std::function<base_packet_assemble *(void)> assemble_creator);
 
+  void set_co_assemble_creator(
+      std::function<base_co_packet_assemble *(void)> assemble_creator);      
+
   void broadcast(
       uint32_t seq, std::string data,
       std::function<void(uint32_t seq, const std::error_code &)> call_back);
@@ -93,6 +96,7 @@ private:
   std::map<addr_v4, std::shared_ptr<tcp_connection>> all_;
   std::map<addr_v4, connection_meta_impl> connection_metas_;
   std::function<base_packet_assemble *(void)> assemble_creator_{nullptr};
+  std::function<base_co_packet_assemble *(void)> co_assemble_creator_{nullptr};
   std::vector<std::shared_ptr<shared_asio_io_context_thread>> io_threads_;
 };
 

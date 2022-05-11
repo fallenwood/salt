@@ -68,12 +68,12 @@ void tcp_client::connect(
 void tcp_client::_connect(
     std::string address_v4, uint16_t port,
     std::function<void(const std::error_code &)> call_back) {
-  auto connection = tcp_connection::create(
-      transfor_io_context_, assemble_creator_(),
+  auto connection =  std::shared_ptr<tcp_connection>(tcp_connection::create(
+      transfor_io_context_, assemble_creator_(), nullptr,
       [this](const std::string &remote_addr, uint16_t port,
              const std::error_code &error_code) {
         this->handle_connection_error(remote_addr, port, error_code);
-      });
+      }));
   connection->set_remote_address(address_v4);
   connection->set_remote_port(port);
   all_[{address_v4, port}] = connection;
