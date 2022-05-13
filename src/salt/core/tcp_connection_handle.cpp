@@ -1,28 +1,26 @@
-#include "salt/tcp_connection_handle.h"
-#include "salt/error.h"
+#include "salt/core/tcp_connection_handle.h"
+#include "salt/core/error.h"
 #include "salt/util/call_back_wrapper.h"
 
 namespace salt {
 
 void tcp_connection_handle::send(
-    uint32_t seq, std::string data,
-    std::function<void(uint32_t seq, const std::error_code &)> call_back) {
+    std::string data, std::function<void(const std::error_code &)> call_back) {
   if (!connection_) {
-    call(call_back, seq, make_error_code(error_code::null_connection));
+    call(call_back, make_error_code(error_code::null_connection));
     return;
   }
 
-  connection_->send(seq, std::move(data), call_back);
+  connection_->send(std::move(data), std::move(call_back));
 }
 
-asio::awaitable<void> tcp_connection_handle::co_send(
-    uint32_t seq, std::string data) {
+asio::awaitable<void> tcp_connection_handle::co_send(std::string data) {
   // if (!connection_) {
   //   call(call_back, seq, make_error_code(error_code::null_connection));
   //   return;
   // }
 
-  co_await connection_->co_send(seq, std::move(data));
+  co_await connection_->co_send(std::move(data));
 }
 
 tcp_connection_handle::tcp_connection_handle(

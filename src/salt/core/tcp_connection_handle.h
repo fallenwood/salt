@@ -1,7 +1,7 @@
 #pragma once
 
-#include "salt/connection_handle.h"
-#include "salt/tcp_connection.h"
+#include "salt/core/connection_handle.h"
+#include "salt/core/tcp_connection.h"
 
 namespace salt {
 
@@ -9,10 +9,9 @@ class tcp_connection_handle : public connection_handle {
 public:
   static std::shared_ptr<connection_handle>
   create(std::shared_ptr<tcp_connection> connection);
-  void send(uint32_t seq, std::string data,
-            std::function<void(uint32_t seq, const std::error_code &)>
-                call_back) override;
-  asio::awaitable<void> co_send(uint32_t seq, std::string data) override;
+  void send(std::string data,
+            std::function<void(const std::error_code &)> call_back) override;
+  asio::awaitable<void> co_send(std::string data) override;
   ~tcp_connection_handle() override = default;
 
 private:

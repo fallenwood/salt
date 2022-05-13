@@ -1,9 +1,9 @@
-#include "salt/tcp_server.h"
+#include "salt/core/tcp_server.h"
 
 #include <system_error>
 
-#include "salt/log.h"
-#include "salt/tcp_connection.h"
+#include "salt/core/log.h"
+#include "salt/core/tcp_connection.h"
 
 namespace salt {
 
@@ -48,7 +48,7 @@ bool tcp_server::accept() {
     return false;
   }
   auto connection =
-      tcp_connection::create(transfor_io_context_, assemble_creator_(), nullptr);
+      tcp_connection::create(transfor_io_context_, assemble_creator_());
   if (!connection) {
     log_error("create connection error");
     return false;
@@ -89,7 +89,7 @@ bool tcp_server::accept() {
 
 asio::awaitable<tcp_connection*> tcp_server::co_accept() {
   auto connection =
-      tcp_connection::create(transfor_io_context_, nullptr, co_assemble_creator_());
+      tcp_connection::create(transfor_io_context_, co_assemble_creator_());
   if (!connection) {
     log_error("create connection error");
     co_return nullptr;

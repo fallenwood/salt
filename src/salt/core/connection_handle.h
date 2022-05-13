@@ -11,12 +11,10 @@ namespace salt {
 
 class connection_handle {
 public:
-  virtual void send(
-      uint32_t seq, std::string data,
-      std::function<void(uint32_t seq, const std::error_code &)> call_back) = 0;
+  virtual void send(std::string data,
+                    std::function<void(const std::error_code &)> call_back) = 0;
 
-  virtual asio::awaitable<void> co_send(
-      uint32_t seq, std::string data) = 0;
+  virtual asio::awaitable<void> co_send(std::string data) = 0;
 
   virtual ~connection_handle() = default;
 };

@@ -1,4 +1,4 @@
-#include "salt/error.h"
+#include "salt/core/error.h"
 
 namespace salt {
 
@@ -32,6 +32,10 @@ std::string salt_error_category::message(int ev) const {
   } break;
   case error_code::require_disconnecet: {
     return "packet assemble return disconnect";
+  } break;
+  case error_code::call_disconnect: {
+    return "user call "
+           "tcp_client::disconnect";
   } break;
   default: {
     return "(unknown error)";
