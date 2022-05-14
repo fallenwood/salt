@@ -1,7 +1,6 @@
-#include "salt/packet_assemble/header_body_assemble.h"
+#include "gtest/gtest.h"
 
-#include <algorithm>
-#include <iterator>
+#include "salt/packet_assemble/header_body_assemble.h"
 
 class message_head {
 public:
@@ -26,17 +25,15 @@ std::string encode_with_string(message_head &head, const std::string &s) {
   return result;
 }
 
-int main() {
-  auto packet_assemble =
-      salt::header_body_assemble<message_head, uint32_t, &message_head::len_>();
-
+TEST(salt_pack_test, unpack) {
   message_head h;
   h.magic_ = 12345;
   auto s = encode_with_string(h, "hello");
-  s += encode_with_string(h, ", world.");
-  (&packet_assemble)->data_received(nullptr, s.substr(0, 3));
-  (&packet_assemble)->data_received(nullptr, s.substr(3, 6));
-  (&packet_assemble)->data_received(nullptr, s.substr(9, 5));
-  (&packet_assemble)->data_received(nullptr, s.substr(14));
-  return 0;
+  s += encode_with_string(h, "world");
+  auto packet_assemble =
+      salt::header_body_assemble<message_head, uint32_t, &message_head::len_>();
+  for (int step = 1; step < s.size() + 1; ++step) {
+  }
+
+  ASSERT_TRUE(true);
 }
