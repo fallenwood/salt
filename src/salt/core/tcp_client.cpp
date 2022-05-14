@@ -32,7 +32,8 @@ void tcp_client::init(uint32_t transfer_thread_count) {
 
 void tcp_client::connect(std::string address_v4, uint16_t port,
                          const connection_meta &meta) {
-  if (!assemble_creator_) {
+  if (!assemble_creator_ && !meta.assemble_creator) {
+    // TODO 通知上游连接错误
     return;
   }
 
@@ -52,6 +53,7 @@ void tcp_client::connect(std::string address_v4, uint16_t port,
 
 void tcp_client::connect(std::string address_v4, uint16_t port) {
   if (!assemble_creator_) {
+    // TODO 通知上游连接错误
     return;
   }
   control_thread_.get_io_context().post(
@@ -61,6 +63,18 @@ void tcp_client::connect(std::string address_v4, uint16_t port) {
 }
 
 void tcp_client::_connect(std::string address_v4, uint16_t port) {
+  salt::base_packet_assemble *assemble = nullptr;
+  if (auto pos = connection_metas_.find({address_v4, port});
+      pos != connection_metas_.end() && pos->second.meta_.assemble_creator) {
+    assemble = pos->second.meta_.assemble_creator();
+  } else {
+    assemble = assemble_creator_();
+  }
+
+  if (!assemble) {
+    // TODO 通知上游连接错误
+    return;
+  }
 
   auto connection = std::shared_ptr<tcp_connection>(tcp_connection::create(
       transfor_io_context_, assemble_creator_(),
@@ -252,7 +266,9 @@ void tcp_client::handle_connection_error(const std::string &remote_address,
   });
 }
 
-void tcp_client::set_notify(tcp_client_notify *notify) { notify_ = notify; }
+void tcp_client::set_notify(std::unique_ptr<tcp_client_notify> notify) {
+  notify_ = std::move(notify);
+}
 
 void tcp_client::notify_connected(const std::string &remote_addr,
                                   uint16_t remote_port) {

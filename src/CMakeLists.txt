@@ -1,7 +1,5 @@
 find_package(Threads)
 
-# add_definitions(-DDISABLE_LOG)
-
 add_library(salt
             salt/core/asio_io_context_thread.cpp
             salt/core/asio_io_context_thread.h
@@ -22,6 +20,7 @@ add_library(salt
             salt/core/tcp_client.cpp
             salt/core/tcp_client.h
             salt/util/call_back_wrapper.h
+            salt/util/byte_order.h
 )
 
 configure_file(salt/version.h.in salt/version.h)
@@ -53,6 +52,7 @@ install(FILES
             salt/core/tcp_connection.h
             salt/core/tcp_server.h
             salt/core/tcp_client.h
+            salt/util/byte_order.h
             DESTINATION include/salt
 )
 

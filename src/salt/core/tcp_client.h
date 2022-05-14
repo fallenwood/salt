@@ -34,6 +34,7 @@ struct connection_meta {
   bool retry_forever{false};
   uint32_t max_retry_cnt{3};
   uint32_t retry_interval_s{5};
+  std::function<base_packet_assemble *(void)> assemble_creator;
 };
 
 class tcp_client {
@@ -60,7 +61,7 @@ public:
 
   void stop();
 
-  void set_notify(tcp_client_notify *notify);
+  void set_notify(std::unique_ptr<tcp_client_notify> notify);
 
 private:
   void _connect(std::string address_v4, uint16_t port);
@@ -104,7 +105,7 @@ private:
   std::map<addr_v4, std::shared_ptr<tcp_connection>> all_;
   std::map<addr_v4, connection_meta_impl> connection_metas_;
   std::function<base_packet_assemble *(void)> assemble_creator_{nullptr};
-  tcp_client_notify *notify_{nullptr};
+  std::unique_ptr<tcp_client_notify> notify_{nullptr};
 
 private:
   asio::io_context transfor_io_context_;
